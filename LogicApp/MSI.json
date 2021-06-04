@@ -1,0 +1,14 @@
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[variables('LogicAppName')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "resources": []
+    }
