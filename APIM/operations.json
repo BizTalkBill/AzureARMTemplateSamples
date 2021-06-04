@@ -1,0 +1,50 @@
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(parameters('apim-name'), '/erp/custbalupd')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Logic/workflows', variables('logicapp_custbalupd_name'))]",
+        "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim-name'), 'erp')]"
+      ],
+      "properties": {
+        "displayName": "Customer Balance Update",
+        "method": "POST",
+        "urlTemplate": "custbalupd",
+        "templateParameters": [],
+        "description": "",
+        "request": {
+          "description": "The request body.",
+          "headers": [],
+          "representations": [
+            {
+              "contentType": "text/xml",
+              "typeName": "request"
+            }
+          ]
+        },
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "Request Accepted",
+            "representations": [
+              {
+                "contentType": "text/xml",
+                "typeName": "Post200ApplicationJsonResponse"
+              }
+            ],
+            "headers": []
+          },
+          {
+            "statusCode": 500,
+            "description": "Error",
+            "representations": [
+              {
+                "contentType": "text/xml",
+                "typeName": "500ApplicationJsonResponse"
+              }
+            ],
+            "headers": []
+          }
+        ]
+      }
+    }
