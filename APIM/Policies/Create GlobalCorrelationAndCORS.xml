@@ -1,0 +1,57 @@
+<!--
+IMPORTANT:
+- Policy elements can appear only within the <inbound>, <outbound>, <backend> section elements.
+- Only the <forward-request> policy element can appear within the <backend> section element.
+- To apply a policy to the incoming request (before it is forwarded to the backend service), place a corresponding policy element within the <inbound> section element.
+- To apply a policy to the outgoing response (before it is sent back to the caller), place a corresponding policy element within the <outbound> section element.
+- To add a policy position the cursor at the desired insertion point and click on the round button associated with the policy.
+- To remove a policy, delete the corresponding policy statement from the policy document.
+- Policies are applied in the order of their appearance, from the top down.
+-->
+<policies>
+    <inbound>
+        <!--Use consumer correlation id or generate new one-->
+        <set-variable name="correlation-id" value="@(context.Request.Headers.ContainsKey(&quot;x-correlation-id&quot;) ? context.Request.Headers.GetValueOrDefault(&quot;x-correlation-id&quot;) : Guid.NewGuid().ToString())" />
+        <!--Set header for end-to-end correlation-->
+        <set-header name="x-correlation-id" exists-action="override">
+            <value>@((string)context.Variables["correlation-id"])</value>
+        </set-header>
+        <!--Trace the correlation id-->
+        <trace source="Global APIM Policy" severity="information">
+            <!-- <message>@(String.Format("{0} | {1}", context.Api.Name, context.Operation.Name))</message> -->
+            <message>@(String.Format("{0} | {1}", context.Deployment.ServiceName, context.Operation.Name))</message>
+            <metadata name="correlation-id" value="@((string)context.Variables[&quot;correlation-id&quot;])" />
+        </trace>
+        <cors allow-credentials="true">
+            <allowed-origins>
+                <origin>https://#{apim-name}#.developer.azure-api.net</origin>
+            </allowed-origins>
+            <allowed-methods preflight-result-max-age="300">
+                <method>*</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>*</header>
+            </expose-headers>
+        </cors>
+        <choose>
+            <when condition="@(context.Deployment.ServiceName.Equals(&quot;bb-production-apim.azure-api.net&quot;))">
+                <check-header name="X-Azure-FDID" failed-check-httpcode="401" failed-check-error-message="Must Come from Front Door" ignore-case="false">
+                    <value>#{frontdoor-id}#</value>
+                </check-header>
+            </when>
+        </choose>
+    </inbound>
+    <backend>
+        <forward-request />
+    </backend>
+    <outbound>
+        <!--Set header for end-to-end correlation-->
+        <set-header name="x-correlation-id" exists-action="override">
+            <value>@((string)context.Variables["correlation-id"])</value>
+        </set-header>
+    </outbound>
+    <on-error />
+</policies>
