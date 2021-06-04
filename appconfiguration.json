@@ -1,0 +1,124 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "BaseName": {
+      "defaultValue": "AH",
+      "type": "string"
+    },
+    "ApplicationName": {
+      "defaultValue": "Integration",
+      "type": "string"
+    },
+    "EnvironmentShortName": {
+      "defaultValue": "shared",
+      "type": "string",
+      "allowedValues": [
+        "shared"
+      ]
+    },
+    "EnvironmentName": {
+      "defaultValue": "Shared",
+      "type": "string"
+    },
+    "EnvironmentType": {
+      "defaultValue": "Production",
+      "type": "string",
+      "allowedValues": [
+        "Production",
+        "Pre-Production",
+        "Non-Production"
+      ]
+    },
+    "EnvironmentTag": {
+      "defaultValue": "Shared",
+      "type": "string"
+    },
+    "ApplicationTag": {
+      "defaultValue": "Integration",
+      "type": "string"
+    },
+    "AzureDevOpsServiceConnectionId": {
+      "defaultValue": "73986d68-d2c1-4797-bb6f-e7175aac75f5",
+      "type": "string"
+    },
+    "AppConfigAdminGroupId": {
+      "defaultValue": "63f7d0a9-0c19-40c1-9cc0-ffa1d5755a6f",
+      "type": "string"
+    },
+    "AppConfigReaderGroupId": {
+      "defaultValue": "82781001-3cfd-45c5-aa6e-ac621fbfc0ff",
+      "type": "string"
+    }
+  },
+  "variables": {
+    "appconfig_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('ApplicationName')),'-',toLower(parameters('EnvironmentShortName')),'-','app-config')]",
+    // az role definition list --query "[].{name:name, roleType:roleType, roleName:roleName}" --output tsv
+    "appconfigdataowner": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5ae67dd6-50cb-40e7-96ff-dc2bfa4b606b')]",
+    "appconfigdatareader": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '516239f1-63e1-4d78-a4de-a74fb236a071')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.AppConfiguration/configurationStores",
+      "apiVersion": "2020-07-01-preview",
+      "name": "[variables('appconfig_name')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "sku": {
+        "name": "standard"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {},
+      "resources": [],
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.AppConfiguration/configurationStores/providers/roleAssignments",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('appconfig_name'),'/Microsoft.Authorization/',parameters('AzureDevOpsServiceConnectionId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appconfig_name'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('appconfigdataowner')]",
+        "principalId": "[parameters('AzureDevOpsServiceConnectionId')]",
+        "scope": "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appconfig_name'))]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.AppConfiguration/configurationStores/providers/roleAssignments",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('appconfig_name'),'/Microsoft.Authorization/',parameters('AppConfigAdminGroupId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appconfig_name'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('appconfigdataowner')]",
+        "principalId": "[parameters('AppConfigAdminGroupId')]",
+        "scope": "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appconfig_name'))]",
+        "principalType": "Group"
+      }
+    },
+    {
+      "type": "Microsoft.AppConfiguration/configurationStores/providers/roleAssignments",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('appconfig_name'),'/Microsoft.Authorization/',parameters('AppConfigReaderGroupId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appconfig_name'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('appconfigdatareader')]",
+        "principalId": "[parameters('AppConfigReaderGroupId')]",
+        "scope": "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appconfig_name'))]",
+        "principalType": "Group"
+      }
+    }
+  ],
+  "outputs": {}
+}
