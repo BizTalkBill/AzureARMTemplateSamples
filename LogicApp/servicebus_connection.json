@@ -1,0 +1,22 @@
+          "contentVersion": "1.0.0.0",
+          "outputs": {},
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+          }
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "servicebus": {
+                "connectionId": "[concat(subscription().id,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/',toupper(parameters('EnvironmentShortName')),'-','microsoft-graph-groupuser-changed-servicebus')]",
+                "connectionName": "[concat(toupper(parameters('EnvironmentShortName')),'-','microsoft-graph-groupuser-changed-servicebus')]",
+                "id": "[concat(subscription().id,'/providers/Microsoft.Web/locations/',resourceGroup().location,'/managedApis/', 'servicebus')]"
+              }
+            }
+          }
+        }
