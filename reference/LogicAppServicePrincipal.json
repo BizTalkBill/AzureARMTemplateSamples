@@ -1,0 +1,4 @@
+"service_principal": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Logic/workflows', variables('LogicAppName')), '2019-05-01', 'Full').identity.principalId]"
+    }
