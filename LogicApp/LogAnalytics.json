@@ -1,0 +1,47 @@
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[variables('LogicAppName')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "resources": [
+        {
+          "type": "providers/diagnosticSettings",
+          "name": "Microsoft.Insights/logging",
+          "dependsOn": [
+            "[variables('LogicAppName')]"
+          ],
+          "apiVersion": "2017-05-01-preview",
+          "properties": {
+            "name": "logging",
+            "workspaceId": "[concat(subscription().id, '/resourceGroups/', parameters('loganalytics-resourcegroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('loganalytics-name'))]",
+            "logs": [
+              {
+                "category": "WorkflowRuntime",
+                "enabled": true,
+                "retentionPolicy": {
+                  "days": 0,
+                  "enabled": false
+                }
+              }
+            ],
+            "metrics": [
+              {
+                "category": "AllMetrics",
+                "enabled": true,
+                "retentionPolicy": {
+                  "days": 0,
+                  "enabled": false
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
