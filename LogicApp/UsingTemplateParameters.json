@@ -1,0 +1,8 @@
+          "contentVersion": "1.0.0.0",
+          "outputs": {},
+          "parameters": {
+            "KeyVaultURL": {
+              "defaultValue": "[variables('KeyVaultURL')]",
+              "type": "String"
+            }
+          },
