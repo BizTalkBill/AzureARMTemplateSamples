@@ -1,0 +1,14 @@
+    {
+      "type": "Microsoft.ApiManagement/service/backends",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(parameters('apim-name'), '/integrationoracleerpcustbalupd_backendservice')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Logic/workflows', variables('logicapp_custbalupd_name'))]"
+      ],
+      "properties": {
+        "description": "integrationoracleerpcustbalupd_backendservice",
+        "url": "[replace(listCallbackUrl(resourceId('Microsoft.Logic/workflows/triggers', variables('logicapp_custbalupd_name'), 'manual'), '2016-06-01').basePath,'/manual/paths/invoke','')]",
+        "protocol": "http",
+        "resourceId": "[concat('https://management.azure.com',subscription().id,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Logic/workflows/',variables('logicapp_custbalupd_name'))]"
+      }
+    }
