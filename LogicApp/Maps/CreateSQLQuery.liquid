@@ -1,0 +1,33 @@
+{{ "DECLARE @DXC_InventOnHandBySelectedLocationsEntityStaging TABLE ([AVAILABLEONHANDQUANTITY] numeric(32,6),[INVENTORYWAREHOUSEID] nvarchar(10),[ITEMNUMBER] nvarchar(20),[PRODUCTCOLORID] nvarchar(10),[PRODUCTSIZEID] nvarchar(10),[BUFFERQUANTITY] bigint,[COMPANY] nvarchar(10))" }}
+{{ "INSERT into @DXC_InventOnHandBySelectedLocationsEntityStaging ([AVAILABLEONHANDQUANTITY],[INVENTORYWAREHOUSEID],[ITEMNUMBER],[PRODUCTCOLORID],[PRODUCTSIZEID],[BUFFERQUANTITY],[COMPANY]) values " }}
+{%- for store in content.stores -%}
+    {%- if forloop.last -%}
+        {%- assign tail = ' ' -%}
+    {%- else -%}
+        {%- assign tail = ', ' -%}
+    {%- endif -%}
+{%- for product in content.products -%}
+{{ "(0,'" }}{{ store }}{{ "','" }}{{ product.ITEMNUMBER }}{{ "','" }}{{ product.PRODUCTCOLORID }}{{ "','" }}{{ product.PRODUCTSIZEID }}{{ "',0,'" }}{{ product.COMPANY }}{{ "')" }}{%- if forloop.last == false -%}{{ ", " }}{%- endif -%}
+{%- endfor -%}
+{{ tail }}
+{%- endfor -%}
+
+{{ "SELECT Z.[INVENTORYWAREHOUSEID],Z.[ITEMNUMBER],Z.[PRODUCTCOLORID],Z.[PRODUCTSIZEID],max(Z.[COMPANY]) as COMPANY,sum(Z.[AVAILABLEONHANDQUANTITY]) as [AVAILABLEONHANDQUANTITY],sum(Z.[BUFFERQUANTITY]) as [BUFFERQUANTITY]" }}
+{{ "FROM (" }}
+{{ "   SELECT [AVAILABLEONHANDQUANTITY],[INVENTORYWAREHOUSEID],[ITEMNUMBER],[PRODUCTCOLORID],[PRODUCTSIZEID],[BUFFERQUANTITY],[COMPANY] from @DXC_InventOnHandBySelectedLocationsEntityStaging" }}
+{{ "   UNION" }}
+{{ "   SELECT [AVAILABLEONHANDQUANTITY],[INVENTORYWAREHOUSEID],[ITEMNUMBER],[PRODUCTCOLORID],[PRODUCTSIZEID],[BUFFERQUANTITY],' ' as [COMPANY] FROM [dbo].[DXC_InventOnHandBySelectedLocationsEntityStaging] " }}
+{%- for store in content.stores -%}
+    {%- if forloop.first == true -%}{{ "   WHERE INVENTORYWAREHOUSEID in (" }}{%- endif -%}{{ "'" }}{{ store }}{{ "'" }}{%- if forloop.last == false -%}{{ "," }}{%- endif -%}{%- if forloop.last == true -%}{{ ")" }}{%- endif -%}
+{%- endfor -%}
+
+{{ "   and (" }}
+{%- for product in content.products -%}
+    {{ "(ITEMNUMBER='" }}{{ product.ITEMNUMBER }}{{"' and PRODUCTCOLORID='" }}{{ product.PRODUCTCOLORID }}{{"' and PRODUCTSIZEID='" }}{{ product.PRODUCTSIZEID }}{{ "')" }}
+    {%- if forloop.last == false -%}
+    {{ " or " }}
+    {%- endif -%}
+{%- endfor -%}
+{{ "   )" }}
+{{ ") as Z" }}
+{{ "Group By Z.[INVENTORYWAREHOUSEID],Z.[ITEMNUMBER],Z.[PRODUCTCOLORID],Z.[PRODUCTSIZEID]" }}
