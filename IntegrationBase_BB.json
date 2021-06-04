@@ -1,0 +1,903 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appconfig-name": {
+      "defaultValue": "bb-shared-app-config",
+      "type": "string"
+    },
+    "appconfig-resourcegroup": {
+      "defaultValue": "Integration-shared",
+      "type": "string"
+    },
+    "BaseName": {
+      "defaultValue": "bb",
+      "type": "string"
+    },
+    "EnvironmentShortName": {
+      "defaultValue": "dev",
+      "type": "string",
+      "allowedValues": [
+        "dev",
+        "production",
+        "shared"
+      ]
+    },
+    "EnvironmentName": {
+      "defaultValue": "Development",
+      "type": "string"
+    },
+    "EnvironmentType": {
+      "defaultValue": "Non-Production",
+      "type": "string",
+      "allowedValues": [
+        "Production",
+        "Pre-Production",
+        "Non-Production"
+      ]
+    },
+    "EnvironmentTag": {
+      "defaultValue": "Development",
+      "type": "string"
+    },
+    "ApplicationTag": {
+      "defaultValue": "Integration",
+      "type": "string"
+    },
+    "KeyVaultSecurityGroupId": {
+      "defaultValue": "b04d6afc-7b4c-44a0-97c3-536c5e74600a",
+      "type": "string"
+    },
+    "KeyVaultServiceConnectionId": {
+      "defaultValue": "f3b053ec-44f9-41f9-8bb3-3be5027aec88",
+      "type": "string"
+    },
+    "KeyVaultReaderGroupId": {
+      "defaultValue": "2f5cf032-2a3b-4bde-825c-4a82057d9d8f",
+      "type": "string"
+    },
+    "KeyVaultSKUFamily": {
+      "defaultValue": "A",
+      "type": "string",
+      "allowedValues": [
+        "A"
+      ]
+    },
+    "KeyVaultSKUName": {
+      "defaultValue": "Standard",
+      "type": "string",
+      "allowedValues": [
+        "Standard",
+        "Premium"
+      ]
+    },
+    "serviceBusSku": {
+      "defaultValue": "Standard",
+      "type": "string",
+      "allowedValues": [
+        "Standard",
+        "Premium"
+      ]
+    },
+    "apimSku": {
+      "defaultValue": "Developer",
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Consumption",
+        "Developer",
+        "Standard",
+        "Premium"
+      ]
+    },
+    "apimSkuCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "The instance size of this API Management service."
+      }
+    },
+    "apimPublisherEmail": {
+      "type": "string",
+      "defaultValue": "BBAPI@brandbank.com.au",
+      "minLength": 1,
+      "metadata": {
+        "description": "The email address of the owner of the service"
+      }
+    },
+    "apimPublisherName": {
+      "type": "string",
+      "defaultValue": "Brand Bank Group",
+      "minLength": 1,
+      "metadata": {
+        "description": "The name of the owner of the service"
+      }
+    },
+    "integrationAccountSku": {
+      "defaultValue": "Free",
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Free",
+        "Standard"
+      ]
+    },
+    "D365-BYOD-sqlserver": {
+      "defaultValue": "dummy",
+      "type": "string"
+    },
+    "D365-BYOD-sqlDatabase": {
+      "defaultValue": "dummy",
+      "type": "string"
+    },
+    "D365-BYOD-sqlUser": {
+      "defaultValue": "dummy",
+      "type": "string"
+    },
+    "D365-BYOD-sqlPassword": {
+      "defaultValue": "dummy",
+      "type": "string"
+    },
+    "FrontDoorAPICustomDNSName": {
+      "defaultValue": "devapi.brandbank.com.au",
+      "type": "string"
+    },
+    "FrontDoorWAFMode": {
+      "defaultValue": "Prevention",
+      "type": "string",
+      "allowedValues": [ "Prevention", "Detection" ]
+    }
+  },
+  "variables": {
+    "laWorkspace_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('EnvironmentShortName')),'-','workspace')]",
+    "appinsights_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('EnvironmentShortName')),'-','appinsights')]",
+    "integrationAccount_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('EnvironmentShortName')),'-','integration')]",
+    "keyvault_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('EnvironmentShortName')),'-','keyvault')]",
+    "servicebus_namespace": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('EnvironmentShortName')),'-','sbns')]",
+    "apim_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('EnvironmentShortName')),'-','apim')]",
+    "frontdoor_name": "[concat(toLower(parameters('BaseName')),toLower(parameters('EnvironmentShortName')))]",
+    "frontdoor_policy_name": "[concat(toLower(parameters('BaseName')),toLower(parameters('EnvironmentShortName')),'default')]"
+  },
+  "resources": [
+    {
+      "type": "microsoft.operationalinsights/workspaces",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('laWorkspace_name')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "properties": {
+        "sku": {
+          "name": "pergb2018"
+        },
+        "retentionInDays": 30,
+        "workspaceCapping": {
+          "dailyQuotaGb": -1
+        },
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02-preview",
+      "name": "[variables('appinsights_name')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "kind": "other",
+      "properties": {
+        "Application_Type": "other",
+        "WorkspaceResourceId": "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]"
+      },
+      "dependsOn": [
+        "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2019-09-01",
+      "name": "[variables('keyvault_name')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "properties": {
+        "sku": {
+          "family": "[parameters('KeyVaultSKUFamily')]",
+          "name": "[parameters('KeyVaultSKUName')]"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('KeyVaultSecurityGroupId')]",
+            "permissions": {
+              "keys": [
+                "Get",
+                "List",
+                "Update",
+                "Create",
+                "Import",
+                "Delete",
+                "Recover",
+                "Backup",
+                "Restore"
+              ],
+              "secrets": [
+                "Get",
+                "List",
+                "Set",
+                "Delete",
+                "Recover",
+                "Backup",
+                "Restore"
+              ],
+              "certificates": [
+                "Get",
+                "List",
+                "Update",
+                "Create",
+                "Import",
+                "Delete",
+                "Recover",
+                "Backup",
+                "Restore",
+                "ManageContacts",
+                "ManageIssuers",
+                "GetIssuers",
+                "ListIssuers",
+                "SetIssuers",
+                "DeleteIssuers"
+              ]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('KeyVaultServiceConnectionId')]",
+            "permissions": {
+              "keys": [
+                "Get",
+                "List",
+                "Update",
+                "Create",
+                "Import",
+                "Delete",
+                "Recover",
+                "Backup",
+                "Restore"
+              ],
+              "secrets": [
+                "Get",
+                "List",
+                "Set",
+                "Delete",
+                "Recover",
+                "Backup",
+                "Restore"
+              ],
+              "certificates": [
+                "Get",
+                "List",
+                "Update",
+                "Create",
+                "Import",
+                "Delete",
+                "Recover",
+                "Backup",
+                "Restore",
+                "ManageContacts",
+                "ManageIssuers",
+                "GetIssuers",
+                "ListIssuers",
+                "SetIssuers",
+                "DeleteIssuers"
+              ]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('KeyVaultReaderGroupId')]",
+            "permissions": {
+              "keys": [
+                "Get",
+                "List"
+              ],
+              "secrets": [
+                "Get",
+                "List"
+              ],
+              "certificates": [
+                "Get",
+                "List"
+              ]
+            }
+          }
+        ],
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": true,
+        "enableSoftDelete": true
+      }
+    },
+    {
+      "apiVersion": "2018-01-01-preview",
+      "name": "[variables('servicebus_namespace')]",
+      "type": "Microsoft.ServiceBus/namespaces",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "sku": {
+        "name": "[parameters('serviceBusSku')]"
+      },
+      "properties": {
+        "identity": {
+          "type": "SystemAssigned"
+        }
+      }
+    },
+    {
+      "apiVersion": "2019-12-01",
+      "name": "[variables('apim_name')]",
+      "type": "Microsoft.ApiManagement/service",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "sku": {
+        "name": "[parameters('apimSku')]",
+        "capacity": "[parameters('apimSkuCount')]"
+      },
+      "properties": {
+        "publisherEmail": "[parameters('apimPublisherEmail')]",
+        "publisherName": "[parameters('apimPublisherName')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/namedValues",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(variables('apim_name'), '/appinsightsInstrumentationKey')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]"
+      ],
+      "properties": {
+        "displayName": "Logger-Credentials-appinsightsInstrumentationKey",
+        "secret": true,
+        "value": "[reference(resourceId('Microsoft.Insights/components', variables('appinsights_name')), '2020-02-02-preview').InstrumentationKey]"
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/loggers",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(variables('apim_name'), '/', variables('apim_name'), 'logger')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]"
+      ],
+      "properties": {
+        "loggerType": "applicationInsights",
+        "credentials": {
+          "instrumentationKey": "{{Logger-Credentials-appinsightsInstrumentationKey}}"
+        },
+        "isBuffered": true,
+        "resourceId": "[resourceId(resourceGroup().name,'microsoft.insights/components', variables('appinsights_name'))]"
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/diagnostics",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(variables('apim_name'), '/applicationinsights')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]",
+        "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apim_name'), concat(variables('apim_name'),'logger'))]"
+      ],
+      "properties": {
+        "alwaysLog": "allErrors",
+        "httpCorrelationProtocol": "Legacy",
+        "verbosity": "information",
+        "logClientIp": true,
+        "loggerId": "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apim_name'), concat(variables('apim_name'),'logger'))]",
+        "sampling": {
+          "samplingType": "fixed",
+          "percentage": 100
+        },
+        "frontend": {
+          "request": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          },
+          "response": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          }
+        },
+        "backend": {
+          "request": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          },
+          "response": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/diagnostics/loggers",
+      "apiVersion": "2018-01-01",
+      "name": "[concat(variables('apim_name'), '/applicationinsights/', variables('apim_name'),'logger')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/diagnostics', variables('apim_name'), 'applicationinsights')]",
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/providers/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[concat(variables('apim_name'), '/Microsoft.Insights/', 'LogsAndMetrics')]",
+      "dependsOn": [],
+      "properties": {
+        "workspaceId": "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]",
+        "logs": [
+          {
+            "category": "GatewayLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Logic/integrationAccounts",
+      "apiVersion": "2016-06-01",
+      "name": "[variables('integrationAccount_name')]",
+      "location": "australiasoutheast",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "sku": {
+        "name": "[parameters('integrationAccountSku')]"
+      },
+      "properties": {
+        "state": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/frontdoorwebapplicationfirewallpolicies",
+      "apiVersion": "2020-04-01",
+      "location": "global",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "name": "[variables('frontdoor_policy_name')]",
+      "properties": {
+        "policySettings": {
+          "enabledState": "Enabled",
+          "mode": "[parameters('FrontDoorWAFMode')]"
+        },
+        "customRules": {
+          "rules": []
+        },
+        "managedRules": {
+          "managedRuleSets": [
+            {
+              "ruleSetType": "Microsoft_DefaultRuleSet",
+              "ruleSetVersion": "1.1",
+              "ruleGroupOverrides": [
+                // {
+                //   "ruleGroupName": "JAVA",
+                //   "rules": [
+                //     {
+                //       "ruleId": "944240",
+                //       "enabledState": "Disabled",
+                //       "action": "Block",
+                //       "exclusions": []
+                //     }
+                //   ],
+                //   "exclusions": []
+                // }
+             ],
+              "exclusions": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      // "condition": "[equals(parameters('EnvironmentType'),'Non-Production')]",
+      "type": "Microsoft.Network/frontdoors",
+      "apiVersion": "2020-05-01",
+      "location": "global",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "name": "[variables('frontdoor_name')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/frontdoorwebapplicationfirewallpolicies', variables('frontdoor_policy_name'))]"
+      ],
+      "properties": {
+        "resourceState": "Enabled",
+        "backendPools": [
+          {
+            "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/BackendPools/', 'apis'))]",
+            "name": "apis",
+            "properties": {
+              "backends": [
+                {
+                  "address": "[concat(variables('apim_name'),'.azure-api.net')]",
+                  "httpPort": 80,
+                  "httpsPort": 443,
+                  "priority": 1,
+                  "weight": 50,
+                  "backendHostHeader": "[concat(variables('apim_name'),'.azure-api.net')]",
+                  "enabledState": "Enabled"
+                }
+              ],
+              "healthProbeSettings": {
+                "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), '/HealthProbeSettings/healthProbeSettings-apis')]"
+              },
+              "loadBalancingSettings": {
+                "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), '/LoadBalancingSettings/loadBalancingSettings-apis')]"
+              },
+              "resourceState": "Enabled"
+            }
+          }
+        ],
+        "healthProbeSettings": [
+          {
+            "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), '/HealthProbeSettings/healthProbeSettings-apis')]",
+            "name": "healthProbeSettings-apis",
+            "properties": {
+              "intervalInSeconds": 120,
+              "path": "/status-0123456789abcdef",
+              "protocol": "Https",
+              "resourceState": "Enabled",
+              "enabledState": "Enabled",
+              "healthProbeMethod": "Head"
+            }
+          }
+        ],
+        "frontendEndpoints": [
+          {
+            "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/FrontendEndpoints/', variables('frontdoor_name'), '-azurefd-net'))]",
+            "name": "[concat(variables('frontdoor_name'), '-azurefd-net')]",
+            "properties": {
+              "hostName": "[concat(variables('frontdoor_name'), '.azurefd.net')]",
+              "sessionAffinityEnabledState": "Disabled",
+              "sessionAffinityTtlSeconds": 0,
+              "webApplicationFirewallPolicyLink": {
+                "id": "[concat(subscription().id,'/resourceGroups/', resourceGroup().name,'/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies/',variables('frontdoor_policy_name'))]"
+              },
+              "resourceState": "Enabled"
+            }
+          },
+          {
+            "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/FrontendEndpoints/', replace(parameters('FrontDoorAPICustomDNSName'),'.','-')))]",
+            "name": "[replace(parameters('FrontDoorAPICustomDNSName'),'.','-')]",
+            "properties": {
+              "hostName": "[parameters('FrontDoorAPICustomDNSName')]",
+              "sessionAffinityEnabledState": "Disabled",
+              "sessionAffinityTtlSeconds": 0,
+              "webApplicationFirewallPolicyLink": {
+                "id": "[concat(subscription().id,'/resourceGroups/', resourceGroup().name,'/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies/',variables('frontdoor_policy_name'))]"
+              },
+              "resourceState": "Enabled"
+            }
+          }
+        ],
+        "loadBalancingSettings": [
+          {
+            "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), '/LoadBalancingSettings/loadBalancingSettings-apis')]",
+            "name": "loadBalancingSettings-apis",
+            "properties": {
+              "additionalLatencyMilliseconds": 0,
+              "sampleSize": 4,
+              "successfulSamplesRequired": 2,
+              "resourceState": "Enabled"
+            }
+          }
+        ],
+        "routingRules": [
+          {
+            "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/RoutingRules/', 'apis'))]",
+            "name": "apis",
+            "properties": {
+              "frontendEndpoints": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/FrontendEndpoints/', variables('frontdoor_name'), '-azurefd-net'))]"
+                },
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/FrontendEndpoints/', replace(parameters('FrontDoorAPICustomDNSName'),'.','-')))]"
+                }
+              ],
+              "acceptedProtocols": ["Https"],
+              "patternsToMatch": ["/*"],
+              "routeConfiguration": {
+                "@odata.type": "#Microsoft.Azure.FrontDoor.Models.FrontdoorForwardingConfiguration",
+                "forwardingProtocol": "HttpsOnly",
+                "backendPool": {
+                  "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/BackendPools/', 'apis'))]"
+                }
+              },
+              "enabledState": "Enabled",
+              "resourceState": "Enabled"
+            }
+          }
+          // {
+          //   "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/RoutingRules/', 'apis-http'))]",
+          //   "name": "apis-http",
+          //   "properties": {
+          //     "frontendEndpoints": [
+          //       {
+          //         "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/FrontendEndpoints/', variables('frontdoor_name'), '-azurefd-net'))]"
+          //       },
+          //       {
+          //         "id": "[concat(resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name')), concat('/FrontendEndpoints/', replace(parameters('FrontDoorCustomDNSName'),'.','-')))]"
+          //       }
+          //     ],
+          //     "acceptedProtocols": ["Http"],
+          //     "patternsToMatch": ["/api/*"],
+          //     "routeConfiguration": {
+          //       "@odata.type": "#Microsoft.Azure.FrontDoor.Models.FrontdoorRedirectConfiguration",
+          //       "redirectProtocol": "HttpsOnly",
+          //       "redirectType": "Found"
+          //     },
+          //     "enabledState": "Enabled",
+          //     "resourceState": "Enabled",
+          //     "rulesEngine": {
+          //       "id": "[resourceId('Microsoft.Network/frontdoors/rulesengines', variables('frontdoor_name'), 'apis')]"
+          //     }
+          //   }
+          // }
+        ],
+        "enabledState": "Enabled",
+        "friendlyName": "[variables('frontdoor_name')]"
+      }
+    },
+    {
+      "name": "nestedTemplateAppConfig",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "resourceGroup": "[parameters('appconfig-resourcegroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'keyvault-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('keyvault_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'keyvault-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'servicebus-namespace$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('servicebus_namespace')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'servicebus-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'laworkspace-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('laWorkspace_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'laworkspace-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('appinsights_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-instrumentationkey$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[concat('{\"uri\": \"https://', variables('keyvault_name'), '.vault.azure.net/secrets/', 'applicationinsights-instrumentationkey', '\"}')]",
+                "contentType": "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('apim_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-ip$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[reference(variables('apim_name'),'2017-03-01').staticIps[0]]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-hostname$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[concat(variables('apim_name'),'.azure-api.net')]"
+              }
+            },
+             {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'integrationaccount-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('integrationAccount_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'integrationaccount-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'frontdoor-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('frontdoor_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'frontdoor-id$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[reference(variables('frontdoor_name'),'2020-05-01').frontdoorId]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('servicebus_namespace'))]",
+        "[resourceId('Microsoft.Logic/integrationAccounts', variables('integrationAccount_name'))]",
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]",
+        "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appinsights_name'))]",
+        "[resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name'))]"
+      ]
+    },
+    {
+      "name": "nestedTemplateKeyVault",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "resourceGroup": "[resourceGroup().name]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "name": "[concat(variables('keyvault_name'),'/', 'applicationinsights-instrumentationkey')]",
+              "apiVersion": "2019-09-01",
+              "properties": {
+                "contentType": "text/secret",
+                "value": "[reference(resourceId('Microsoft.Insights/components', variables('appinsights_name')), '2020-02-02-preview').InstrumentationKey]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appinsights_name'))]"
+      ]
+    },
+    {
+      "condition": "[not(equals(parameters('D365-BYOD-sqlserver'),'dummy'))]",
+      "type": "Microsoft.Web/connections",
+      "apiVersion": "2016-06-01",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "name": "D365_BYOD",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/sql')]"
+        },
+        "displayName": "D365_BYOD",
+        "parameterValues": {
+          "server": "[concat(parameters('D365-BYOD-sqlserver'),'.database.windows.net')]",
+          "database": "[parameters('D365-BYOD-sqlDatabase')]",
+          "authType": "sqlserver",
+          "username": "[parameters('D365-BYOD-sqlUser')]",
+          "password": "[parameters('D365-BYOD-sqlPassword')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
