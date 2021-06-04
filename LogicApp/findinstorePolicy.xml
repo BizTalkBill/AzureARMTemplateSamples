@@ -1,0 +1,18 @@
+<policies>
+    <inbound>
+        <base />
+         <set-backend-service  backend-id="findinstore_backendservice" />
+        <set-method >POST</set-method>
+        <rewrite-uri template="#{ARM_urltemplate}#" />
+        <set-header name="X-Auth" exists-action="delete" />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
