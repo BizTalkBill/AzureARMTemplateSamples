@@ -1,0 +1,21 @@
+    {
+      "type": "Microsoft.ApiManagement/service/apis",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(parameters('apim-name'), '/erp')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apiVersionSets', parameters('apim-name'), 'erp')]"
+      ],
+      "properties": {
+        "displayName": "erp",
+        "apiRevision": "1",
+        "description": "From D365 to ERP",
+        "subscriptionRequired": true,
+        "path": "erp",
+        "protocols": [
+          "https"
+        ],
+        "isCurrent": true,
+        "apiVersion": "v1",
+        "apiVersionSetId": "[resourceId('Microsoft.ApiManagement/service/apiVersionSets', parameters('apim-name'), 'erp')]"
+      }
+    }
