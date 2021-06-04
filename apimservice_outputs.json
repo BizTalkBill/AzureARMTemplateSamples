@@ -1,0 +1,18 @@
+"outputs": {
+    "apim-name": {
+      "type": "string",
+      "value": "[variables('apim_name')]"
+    },
+    "apim-resourcegroup": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "apim-ip": {
+      "type": "string",
+      "value": "[reference(variables('apim_name'),'2017-03-01').staticIps[0]]"
+    },
+    "apim-hostname": {
+      "type": "string",
+      "value": "[concat(variables('apim_name'),'.azure-api.net')]"
+    }
+  }
