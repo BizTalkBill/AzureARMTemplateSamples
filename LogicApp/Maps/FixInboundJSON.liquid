@@ -1,0 +1,38 @@
+{
+ "stores": [
+    {% for store in content.stores %}
+        "{{ store }}"{% if forloop.last == false %},{% endif %}
+    {% endfor %}
+ ],
+  "products": [
+    {% for product in content.products %}
+    {
+        {% assign field_counter = 1 %}
+        {% assign partofProduct = product | Replace:'-','@' | Split:'@' %}
+        {% for field in partofProduct %}
+            {% if field_counter == 4 %}
+                "COMPANY":"-{{ field }}",
+                {% assign field_counter = 5 %}
+            {% endif %} 
+            {% if field_counter == 3 %}
+                "PRODUCTSIZEID":"{{ field }}",
+                {% assign field_counter = 4 %}
+            {% endif %} 
+            {% if field_counter == 2 %}
+                "PRODUCTCOLORID":"{{ field }}",
+                {% assign field_counter = 3 %}
+            {% endif %}
+            {% if field_counter == 1 %}
+                "ITEMNUMBER":"{{ field }}",
+                {% assign field_counter = 2 %}
+            {% endif %}
+        {% endfor %}
+        {% if field_counter == 4 %}
+                "PRODUCTSTYLEID":"",
+                {% assign field_counter = 5 %}
+        {% endif %} 
+    }
+    {% if forloop.last == false %},{% endif %}
+    {% endfor %}
+  ]
+}
