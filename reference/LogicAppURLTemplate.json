@@ -1,0 +1,4 @@
+"urltemplate": {
+      "type": "string",
+      "value": "[concat('/manual/paths/invoke/?api-version=2016-06-01&sp=', listCallbackUrl(resourceId('Microsoft.Logic/workflows/triggers', variables('logicapp_name'), 'manual'), '2016-06-01').queries.sp, '&sv=', listCallbackUrl(resourceId('Microsoft.Logic/workflows/triggers', variables('logicapp_name'), 'manual'), '2016-06-01').queries.sv, '&sig={{InventoryFindInStoreSIG}}')]"
+    }
