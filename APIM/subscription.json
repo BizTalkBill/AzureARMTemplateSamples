@@ -1,0 +1,14 @@
+    {
+      "type": "Microsoft.ApiManagement/service/subscriptions",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(parameters('apim-name'), '/ERP')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/products', parameters('apim-name'), 'ERP')]"
+      ],
+      "properties": {
+        "scope": "[resourceId('Microsoft.ApiManagement/service/products', parameters('apim-name'), 'ERP')]",
+        "displayName": "ERP",
+        "state": "active",
+        "allowTracing": false
+      }
+    }
