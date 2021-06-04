@@ -1,0 +1,131 @@
+    {
+      "apiVersion": "2019-12-01",
+      "name": "[variables('apim_name')]",
+      "type": "Microsoft.ApiManagement/service",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "sku": {
+        "name": "[parameters('apimSku')]",
+        "capacity": "[parameters('apimSkuCount')]"
+      },
+      "properties": {
+        "publisherEmail": "[parameters('apimPublisherEmail')]",
+        "publisherName": "[parameters('apimPublisherName')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/namedValues",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(variables('apim_name'), '/appinsightsInstrumentationKey')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]"
+      ],
+      "properties": {
+        "displayName": "Logger-Credentials-appinsightsInstrumentationKey",
+        "secret": true,
+        "value": "[reference(resourceId('Microsoft.Insights/components', variables('appinsights_name')), '2020-02-02-preview').InstrumentationKey]"
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/loggers",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(variables('apim_name'), '/', variables('apim_name'), 'logger')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]"
+      ],
+      "properties": {
+        "loggerType": "applicationInsights",
+        "credentials": {
+          "instrumentationKey": "{{Logger-Credentials-appinsightsInstrumentationKey}}"
+        },
+        "isBuffered": true,
+        "resourceId": "[resourceId(resourceGroup().name,'microsoft.insights/components', variables('appinsights_name'))]"
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/diagnostics",
+      "apiVersion": "2020-06-01-preview",
+      "name": "[concat(variables('apim_name'), '/applicationinsights')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]",
+        "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apim_name'), concat(variables('apim_name'),'logger'))]"
+      ],
+      "properties": {
+        "alwaysLog": "allErrors",
+        "httpCorrelationProtocol": "Legacy",
+        "verbosity": "information",
+        "logClientIp": true,
+        "loggerId": "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apim_name'), concat(variables('apim_name'),'logger'))]",
+        "sampling": {
+          "samplingType": "fixed",
+          "percentage": 100
+        },
+        "frontend": {
+          "request": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          },
+          "response": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          }
+        },
+        "backend": {
+          "request": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          },
+          "response": {
+            "headers": [],
+            "body": {
+              "bytes": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/diagnostics/loggers",
+      "apiVersion": "2018-01-01",
+      "name": "[concat(variables('apim_name'), '/applicationinsights/', variables('apim_name'),'logger')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/diagnostics', variables('apim_name'), 'applicationinsights')]",
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/providers/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[concat(variables('apim_name'), '/Microsoft.Insights/', 'LogsAndMetrics')]",
+      "dependsOn": [],
+      "properties": {
+        "workspaceId": "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]",
+        "logs": [
+          {
+            "category": "GatewayLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      }
+    }
