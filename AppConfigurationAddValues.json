@@ -1,0 +1,190 @@
+    {
+      "name": "nestedTemplateAppConfig",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "resourceGroup": "[parameters('appconfig-resourcegroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'keyvault-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('keyvault_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'keyvault-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            // {
+            //   "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+            //   "name": "[concat(parameters('appconfig-name'),'/', 'servicebus-namespace$', parameters('EnvironmentShortName'))]",
+            //   "apiVersion": "2020-07-01-preview",
+            //   "properties": {
+            //     "value": "[variables('servicebus_namespace')]"
+            //   }
+            // },
+            // {
+            //   "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+            //   "name": "[concat(parameters('appconfig-name'),'/', 'servicebus-resourcegroup$', parameters('EnvironmentShortName'))]",
+            //   "apiVersion": "2020-07-01-preview",
+            //   "properties": {
+            //     "value": "[resourceGroup().name]"
+            //   }
+            // },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'laworkspace-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('laWorkspace_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'laworkspace-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('appinsights_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-instrumentationkey$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[concat('{\"uri\": \"https://', variables('keyvault_name'), '.vault.azure.net/secrets/', 'applicationinsights-instrumentationkey', '\"}')]",
+                "contentType": "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'applicationinsights-connectionstring$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[concat('{\"uri\": \"https://', variables('keyvault_name'), '.vault.azure.net/secrets/', 'applicationinsights-connectionstring', '\"}')]",
+                "contentType": "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('apim_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-ip$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[reference(variables('apim_name'),'2017-03-01').staticIps[0]]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'apim-hostname$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[concat(variables('apim_name'),'.azure-api.net')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'integrationaccount-name$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[variables('integrationAccount_name')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "name": "[concat(parameters('appconfig-name'),'/', 'integrationaccount-resourcegroup$', parameters('EnvironmentShortName'))]",
+              "apiVersion": "2020-07-01-preview",
+              "properties": {
+                "value": "[resourceGroup().name]"
+              }
+            }
+            // {
+            //   "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+            //   "name": "[concat(parameters('appconfig-name'),'/', 'frontdoor-name$', parameters('EnvironmentShortName'))]",
+            //   "apiVersion": "2020-07-01-preview",
+            //   "properties": {
+            //     "value": "[variables('frontdoor_name')]"
+            //   }
+            // },
+            // {
+            //   "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+            //   "name": "[concat(parameters('appconfig-name'),'/', 'frontdoor-resourcegroup$', parameters('EnvironmentShortName'))]",
+            //   "apiVersion": "2020-07-01-preview",
+            //   "properties": {
+            //     "value": "[resourceGroup().name]"
+            //   }
+            // },
+            // {
+            //   "condition": "[equals(parameters('DeployFrontDoor'),'Yes')]",
+            //   "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+            //   "name": "[concat(parameters('appconfig-name'),'/', 'frontdoor-id$', parameters('EnvironmentShortName'))]",
+            //   "apiVersion": "2020-07-01-preview",
+            //   "properties": {
+            //     "value": "[reference(variables('frontdoor_name'),'2020-05-01').frontdoorId]"
+            //   }
+            // },
+            // {
+            //   "condition": "[equals(parameters('DeployFrontDoor'),'Yes')]",
+            //   "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+            //   "name": "[concat(parameters('appconfig-name'),'/', 'FrontDoor:ID$', parameters('EnvironmentShortName'))]",
+            //   "apiVersion": "2020-07-01-preview",
+            //   "properties": {
+            //     "value": "[reference(variables('frontdoor_name'),'2020-05-01').frontdoorId]"
+            //   }
+            // }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]",
+        //"[resourceId('Microsoft.ServiceBus/namespaces', variables('servicebus_namespace'))]",
+        // "[resourceId('Microsoft.Logic/integrationAccounts', variables('integrationAccount_name'))]",
+        "[resourceId('Microsoft.ApiManagement/service', variables('apim_name'))]",
+        "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appinsights_name'))]"
+        //"[resourceId('Microsoft.Network/frontdoors', variables('frontdoor_name'))]"
+      ]
+    }
