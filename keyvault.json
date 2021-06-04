@@ -1,0 +1,77 @@
+  "variables": {
+    "keyvault_name": "[concat(toLower(parameters('BaseName')),'-',toLower(parameters('ApplicationName')),'-',toLower(parameters('EnvironmentShortName')),'-','kv')]",
+    // az role definition list --query "[].{name:name, roleType:roleType, roleName:roleName}" --output tsv
+    "keyvaultadministrator": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00482a5a-887f-4fb3-b363-3b7fe8e74483')]",
+    //"keyvaultreader": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '21090545-7ca7-4776-b22c-e363652d74d2')]",
+    "keyvaultsecretuser": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2019-09-01",
+      "name": "[variables('keyvault_name')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "[parameters('EnvironmentTag')]",
+        "Application": "[parameters('ApplicationTag')]"
+      },
+      "properties": {
+        "sku": {
+          "family": "[parameters('KeyVaultSKUFamily')]",
+          "name": "[parameters('KeyVaultSKUName')]"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "accessPolicies": [],
+        "enableRbacAuthorization": true,
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": true,
+        "enableSoftDelete": true
+      },
+      "dependsOn": [
+        "[resourceId('microsoft.operationalinsights/workspaces', variables('laWorkspace_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('keyvault_name'),'/Microsoft.Authorization/',guid(resourceGroup().id))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('keyvaultadministrator')]",
+        "principalId": "[parameters('AzureDevOpsServiceConnectionId')]",
+        "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('keyvault_name'),'/Microsoft.Authorization/',parameters('KeyVaultAdminGroupId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('keyvaultadministrator')]",
+        "principalId": "[parameters('KeyVaultAdminGroupId')]",
+        "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]",
+        "principalType": "Group"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('keyvault_name'),'/Microsoft.Authorization/',parameters('KeyVaultReaderGroupId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('keyvaultsecretuser')]",
+        "principalId": "[parameters('KeyVaultReaderGroupId')]",
+        "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyvault_name'))]",
+        "principalType": "Group"
+      }
+    }
+   ]
